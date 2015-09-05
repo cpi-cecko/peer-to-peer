@@ -31,6 +31,24 @@ Based on [005] and [RFC5694]
 
 ===
 
+Agenda
+1. Definition of a P2P system. Terminology. Case studies.
+2. Simple, LAN-based, multicast, UDP, P2P chat.
+3. Making the chat global. Centralized solution.
+4. Exploring decentralized solutions. Going through NATs.
+   Flooding broadcast of queries.
+5. Routing model-based chat.
+6. DHT-based chat.
+7. Streaming video.
+8. Editing documents.
+9. Sharing big files and BitTorrent.
+10. Ad-hoc sharing of big files.
+11. Sharing small files; gitp2p.
+12. Distributed computing in P2P systems.
+13. Disaster-based P2P systems.
+
+===
+
 Examples:
 - P2PSIP
 - Gnutella
