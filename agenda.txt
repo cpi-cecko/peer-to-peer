@@ -49,12 +49,20 @@ Agenda
 
 ===
 
+Protocols
+
+DHT - Chord, CAN, Tapestry, Pastry
+Gossip protocol
+
+===
+
 Examples:
 - P2PSIP
 - Gnutella
 - Napster
 - Kademlia
 - BitTorrent
+- Tox
 - Skype
 - WoW updates
 - Octoshape
