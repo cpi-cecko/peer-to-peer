@@ -1,0 +1,53 @@
+What is a P2P System?
+=====================
+
+A system is considered to be P2P if every node in it provides services as well
+as uses services provided by other nodes.
+
+A system where most nodes only act as clients cannot be considered P2P.
+However, a system could be P2P if there are some specialized nodes which only
+act as a server or a client, or provide other kinds of resources.
+
+Having a central enrollment server in a P2P system, doesn't make the system
+non-P2P. Having a centralized torrent-tracker in a file-sharing P2P system
+doesn't make it non-P2P.
+
+However, Grid computing systems, by this definition, aren't P2P. SETI@home and
+MapReduce also can't be considered P2P systems.
+
+Types of P2P Systems
+====================
+
+P2P systems for data distribution. These are systems like BitTorrent, Napster,
+Gnutella.
+
+P2P systems for distributed computing. We'll relax the definition. SETI@home,
+genome@Home.
+
+P2P systems for collaboration. Tox, Skype, P2PSIP, P2P rendezveous systems.
+
+Case studies
+============
+
+. Gnutella/Gnutella2. First decentralized peer-to-peer network. gtk-gnutella,
+Shareaza, LimeWire -> WireShare. GnucDNA.
+
+. Napster
+
+. Tox
+
+. BitTorrent
+
+. WebRTC. WebTorrent
+
+. gitp2p
+
+. Kademlia. Kad network.
+
+. Kazaa (FastTrack protocol)
+
+. Storm botnet
+
+. Coral CDN
+
+. PAST (Pastry protocol)
