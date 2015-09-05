@@ -1,0 +1,67 @@
+Based on [005] and [RFC5694]
+
+. Definition of a P2P system
+
+. Figuring out what problem the peer-to-peer system will solve
+    . File Sharing
+        -- big files (BitTorrent)
+        -- small files (peer-to-peer git hosting)
+    . Distributed Computing
+    . Collaboration
+
+. Architectures
+    . Purely Decentralized
+    . Hybrid
+
+. Discovery
+    . Centralized Indexes
+    . Flooding Broadcast of Queries
+    . Routing Model
+    . DHT
+
+. Network Structure
+
+. Challanges
+    . Security
+    . Reliability
+    . Flexibility
+    . Load Balancing
+    . Incentives
+    . Energy-aware P2P protocols [006]
+
+===
+
+Examples:
+- P2PSIP
+- Gnutella
+- Napster
+- Kademlia
+- BitTorrent
+- Skype
+- WoW updates
+- Octoshape
+- ZebraNet (kind-of)
+- P2P botnets, SETI@home, MapReduce (kind-of)
+- JXTA
+- gitp2p
+
+Functions:
+  - Enrollment
+  - Discovery
+  -- Data indexing (finding stored data)
+  -- Data storage
+  -- Computation
+  -- Message transport
+
+Taxonomy:
+- Central, Local, Distributed
+- Semantic and Semantic-free indexes
+
+Content distribution:
+- Encrypted content
+- Whole content, part of it, linear combination of the content
+
+A pure P2P system would still be considered pure even if it had centralized
+enrollment and peer discovery services.
+
+P2P rendezvous systems
