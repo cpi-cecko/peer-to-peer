@@ -1,0 +1,4 @@
+"As it turns out, the upper limit of 5000 for the ephemeral ports, which many 
+older systems implement, was a typo [Borman 1997a]. The limit should have been
+50,000."
+-- UNP
