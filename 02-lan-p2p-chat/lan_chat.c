@@ -10,9 +10,14 @@
  * rfc6335
  * 1. Detecting if peer has gone.
  * 2. Chat groups.
+ * 3. Sleep on iterations when trying to connect to socket.
  *
  * Notes:
  * 64-bitness, protocol independence
+ *
+ * "Write your code to read buffers of data, and if a line is expected, check
+ * the buffer to see if it contains that line."
+ * -- UNP
  */
 
 /*
