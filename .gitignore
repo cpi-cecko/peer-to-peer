@@ -1,3 +1,6 @@
+02-lan-p2p-chat/*
+!02-lan-p2p-chat/*.c
+
 *.o
 *.a
 
