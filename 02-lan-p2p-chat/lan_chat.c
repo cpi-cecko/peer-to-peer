@@ -155,13 +155,12 @@ void message_loop(char *user_name, int sockfd)
             break;
 
         int msg_len = strlen(message);
+        int to_send_len = name_len + 2 + msg_len + 1;
 
-        char *to_send = malloc(name_len + 2 + msg_len + 1);
-        memcpy(to_send, user_name, name_len);
-        memcpy(to_send + name_len, ": ", 2);
-        memcpy(to_send + name_len + 2, &message, msg_len + 1);
+        char *to_send = malloc(to_send_len);
+        snprintf(to_send, to_send_len, "%s: %s", user_name, message);
 
-        Write(sockfd, to_send, strlen(to_send));
+        Writen(sockfd, to_send, strlen(to_send));
 
         free(to_send);
     }
