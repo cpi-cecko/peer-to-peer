@@ -18,6 +18,13 @@
  * "Write your code to read buffers of data, and if a line is expected, check
  * the buffer to see if it contains that line."
  * -- UNP
+ *
+ * Protocol (git pkt-line format):
+ * message = msg_size sender_id ": " msg_data
+ *
+ * msg_size = 4*4(HEXDIGIT)
+ * sender_id = 1*10(ALNUM)
+ * msg_data = (msg_size - 4)*(OCTET)
  */
 
 /*
@@ -90,6 +97,7 @@ int main(int argc, char *argv[])
     message_loop(user_name, sockfd);
 
 
+    kill(listenerpid, SIGKILL);
     exit(0);
 }
 
@@ -116,11 +124,17 @@ void listener_task(int listen_port)
     while (1) {
         int connfd = Accept(listenfd, (SA *) NULL, NULL);
 
-        int n;
-        char message[1024];
-        while ( (n = read(connfd, message, sizeof(message))) > 0 ) {
-            message[n] = 0;
-            printf("%s", message);
+        char msg_len_hex[4];
+        while (read(connfd, msg_len_hex, sizeof(msg_len_hex)) > 0) {
+            unsigned int msg_len = hex_to_int(msg_len_hex);
+            msg_len -= 5;
+            char *message = malloc(msg_len);
+
+            Readn(connfd, message, msg_len);
+            message[msg_len] = 0;
+            printf("%s\n", message);
+
+            free(message);
         }
 
         Close(connfd);
@@ -145,23 +159,36 @@ int find_peer(struct sockaddr_in *servaddr, int sockfd, int listen_port)
     return current_port;
 }
 
+char* create_send_msg(char*, char*);
+
 void message_loop(char *user_name, int sockfd)
 {
-    int name_len = strlen(user_name);
     while (1) {
         char message[1024];
         if (!fgets(message, sizeof(message), stdin) ||
                 strncmp(message, END_SIGNAL, strlen(END_SIGNAL)) == 0)
             break;
 
-        int msg_len = strlen(message);
-        int to_send_len = name_len + 2 + msg_len + 1;
-
-        char *to_send = malloc(to_send_len);
-        snprintf(to_send, to_send_len, "%s: %s", user_name, message);
+        char *to_send = create_send_msg(message, user_name);
 
         Writen(sockfd, to_send, strlen(to_send));
 
         free(to_send);
     }
+}
+
+char* create_send_msg(char *message, char *user_name)
+{
+    chomp(message);
+
+    int to_send_len = 4 + strlen(user_name) + 
+                      2 + strlen(message) +
+                      1;
+    char hex_len[5];
+    int_to_hex_4(to_send_len, hex_len);
+
+    char *to_send = malloc(to_send_len);
+    snprintf(to_send, to_send_len, "%s%s: %s", hex_len, user_name, message);
+
+    return to_send;
 }

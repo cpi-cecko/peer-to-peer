@@ -515,6 +515,7 @@ void	 err_ret(const char *, ...);
 void	 err_sys(const char *, ...);
 
 void int_to_hex_4(int, char*);
-int hex_to_int(char[]);
+unsigned int hex_to_int(char*);
+void chomp(char*);
 
 #endif	/* __unp_h */
