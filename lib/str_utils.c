@@ -19,3 +19,10 @@ void chomp(char *str)
 {
     str[strcspn(str, "\r\n")] = 0;
 }
+
+/*
+ * This function checks if subnet_address is of the form x.x.x.x/y
+ */
+int is_valid_subnet_address(char *subnet_address)
+{
+}

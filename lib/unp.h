@@ -517,5 +517,6 @@ void	 err_sys(const char *, ...);
 void int_to_hex_4(int, char*);
 unsigned int hex_to_int(char*);
 void chomp(char*);
+int is_valid_subnet_address(char*);
 
 #endif	/* __unp_h */
