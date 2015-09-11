@@ -113,6 +113,7 @@ int main(int argc, char *argv[])
     if ( (listenerpid = Fork()) == 0 ) {
         printf("LISTENER: Spawned listener\n");
         listener_task(listen_port);
+        exit(0);
     }
 
     /* The main thread would connect to a peer and send user input */
