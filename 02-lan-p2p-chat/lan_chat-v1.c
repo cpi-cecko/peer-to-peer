@@ -68,17 +68,12 @@ int spawn_listener(int listen_port)
 }
 
 
-int find_peer(struct sockaddr_in*, int, int);
+int find_peer(int, int);
 
 int connect_to_listener(int listen_port)
 {
     int sockfd;
     sockfd = Socket(AF_INET, SOCK_STREAM, 0);
-
-    struct sockaddr_in servaddr;
-    bzero(&servaddr, sizeof(servaddr));
-    servaddr.sin_family = AF_INET;
-    Inet_pton(AF_INET, "127.0.0.1", &servaddr.sin_addr);
 
     /*
      * This is the most crucial part of the peer-to-peer chat.
@@ -98,7 +93,7 @@ int connect_to_listener(int listen_port)
      * Even though this situation is somewhat artificial it is simple-enough
      * for educational purposes and it enables us to test our system locally.
      */
-    find_peer(&servaddr, sockfd, listen_port);
+    find_peer(sockfd, listen_port);
 
     return sockfd;
 }
@@ -146,8 +141,13 @@ void listener_task(int listen_port)
     }
 }
 
-int find_peer(struct sockaddr_in *servaddr, int sockfd, int listen_port)
+int find_peer(int sockfd, int listen_port)
 {
+    struct sockaddr_in servaddr;
+    bzero(&servaddr, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    Inet_pton(AF_INET, "127.0.0.1", &servaddr.sin_addr);
+
     int current_port = PORT_MIN;
     do {
         if (current_port > PORT_MAX)
@@ -156,9 +156,9 @@ int find_peer(struct sockaddr_in *servaddr, int sockfd, int listen_port)
         if (current_port == listen_port)
             current_port++;
 
-        servaddr->sin_port = htons(current_port);
+        servaddr.sin_port = htons(current_port);
         current_port++;
-    } while (connect(sockfd, (SA *) servaddr, sizeof(*servaddr)) < 0);
+    } while (connect(sockfd, (SA *) &servaddr, sizeof(servaddr)) < 0);
 
     --current_port;
     return current_port;
