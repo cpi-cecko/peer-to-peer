@@ -8,6 +8,12 @@
  *
  * Usage: lan_chat-v1 <listen-port> <user-id>
  */
+
+/*
+ * TODO:
+ * 1. Try to make it work with non-byte-bounded subnets.
+ * 2. Try to make it work with IPv6 and be protocol-independent.
+ */
 #include "../lib/unp.h"
 
 #define CHAT_PORT 11000
