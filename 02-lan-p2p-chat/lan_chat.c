@@ -10,7 +10,13 @@
  * rfc6335
  * 1. Detecting if peer has gone.
  * 2. Chat groups.
- * 3. Sleep on iterations when trying to connect to socket.
+ * 3. Sleep on iterations when trying to connect to peer.
+ * 4. Check for ECONNREFUSED when trying to connect to peer.
+ * 5. Implement the following functionality:
+ *   -- Client starts
+ *   -- Chooses port of user with which to interact
+ *   -- Waits for approval
+ *   -- Starts chatting
  *
  * Notes:
  * 64-bitness, protocol independence
