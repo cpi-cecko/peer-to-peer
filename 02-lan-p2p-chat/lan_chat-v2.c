@@ -23,7 +23,7 @@
 
 int spawn_listener(int);
 int connect_to_listener(char*);
-void message_loop(char*, int);
+void message_loop(const char*, int);
 
 int main(int argc, char **argv)
 {
@@ -111,9 +111,9 @@ int connect_to_listener(char *subnet_address)
 }
 
 
-char* create_send_msg(char*, char*);
+char* create_send_msg(char*, const char*);
 
-void message_loop(char *user_name, int sockfd)
+void message_loop(const char *user_name, int sockfd)
 {
     char message[1024];
     while (fgets(message, sizeof(message), stdin) &&
@@ -167,7 +167,7 @@ int find_peer(int sockfd, char *subnet_address)
     return -1;
 }
 
-char* create_send_msg(char *message, char *user_name)
+char* create_send_msg(char *message, const char *user_name)
 {
     chomp(message);
 
