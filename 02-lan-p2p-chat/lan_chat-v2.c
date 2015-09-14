@@ -3,13 +3,15 @@
  * The subnet address is passed as an argument. We iterate over the
  * possible IPs in the subnet /24 and try to connect to each one.
  *
- * Usage: lan_chat-v1 <listen-port> <user-id>
+ * Usage: lan_chat-v2 <subnet-address> <user-name>
  */
 
 /*
  * TODO:
  * 1. Try to make it work with non-byte-bounded subnets.
  * 2. Try to make it work with IPv6 and be protocol-independent.
+ * 3. We don't have any authentication currently. Think and implement a clever
+ *  solution of this problem.
  */
 #include "../lib/unp.h"
 
@@ -80,22 +82,11 @@ int connect_to_listener(char *subnet_address)
     sockfd = Socket(AF_INET, SOCK_STREAM, 0);
 
     /*
-     * This is the most crucial part of the peer-to-peer chat.
+     * Now, we'll use a different algorithm to find our peers on a LAN.
      *
-     * The problem is, that in order to chat with someone, we must first find
-     * him. In server-side solutions, we would contact a central server, bound
-     * on a well-known port, and ask it to route each message we type to the
-     * peer we are interested in.
-     *
-     * When we have no centralized entity, however, we must use the peer
-     * infrastructure to send our messages to the desired location. One of the
-     * simplest situations in which we can be is that peers are on the same
-     * host, only bound on different ports. If we know the range of the ports,
-     * we can iterate over it and try connecting to every (ip, port) pair until
-     * success.
-     *
-     * Even though this situation is somewhat artificial it is simple-enough
-     * for educational purposes and it enables us to test our system locally.
+     * We will iterate over all the hosts in a given subnet, try to connect to
+     * each one on a given port, and if the connection is successful, start 
+     * chatting with them.
      */
     find_peer(sockfd, subnet_address);
 
