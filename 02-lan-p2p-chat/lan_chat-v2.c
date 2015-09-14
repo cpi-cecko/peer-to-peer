@@ -1,10 +1,7 @@
 /*
  * This version implements chatting with peers on the same subnet.
- * The subnet address and mask are passed as arguments. We iterate over the
- * possible IPs in the subnet and try to connect to each one.
- *
- * To ease the implementation, the subnet must be at 1-byte boundary, e.g. 8,
- * 16 or 24.
+ * The subnet address is passed as an argument. We iterate over the
+ * possible IPs in the subnet /24 and try to connect to each one.
  *
  * Usage: lan_chat-v1 <listen-port> <user-id>
  */
@@ -27,21 +24,16 @@ void message_loop(const char*, int);
 
 int main(int argc, char **argv)
 {
-    if (argc != 4)
-        err_quit("usage: lan_chat <subnet-address> <subnet-mask> <user-name>");
+    if (argc != 3)
+        err_quit("usage: lan_chat <subnet-address> <user-name>");
 
     char *subnet_address;
     subnet_address = argv[1];
     if (!inet_aton(subnet_address, NULL))
         err_quit("The subnet address must be a valid IPv4 address");
 
-    int subnet_mask;
-    subnet_mask = atoi(argv[2]);
-    if (subnet_mask != 8 && subnet_mask != 16 && subnet_mask != 24)
-        err_quit("The subnet mask must either be 8, 16 or 24");
-
     char *user_name;
-    user_name = argv[3];
+    user_name = argv[2];
     if (strlen(user_name) > 10)
         err_quit("The user_name must be at most 10 characters");
 
