@@ -128,6 +128,7 @@ void listener_task(int listen_port)
     while (1) {
         int connfd = Accept(listenfd, (SA *) NULL, NULL);
 
+        // TODO: Put message parsing in function
         char msg_len_hex[4];
         while (read(connfd, msg_len_hex, sizeof(msg_len_hex)) > 0) {
             unsigned int msg_len = hex_to_int(msg_len_hex);
@@ -151,10 +152,22 @@ int find_peer(int sockfd, char *subnet_address)
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_port = htons(CHAT_PORT);
-    Inet_pton(AF_INET, "127.0.0.1", &servaddr.sin_addr);
 
+    /* Remove the last octet from the address */
+    char *dot = strrchr(subnet_address, '.');
+    dot[1] = 0;
+
+    int i = 180;
+    char try_address[strlen(subnet_address) + 4];
     do {
+        snprintf(try_address, sizeof(try_address), "%s%d", subnet_address, i);
+        printf("Trying %s\n", try_address);
+        ++i;
+
+        Inet_pton(AF_INET, try_address, &servaddr.sin_addr);
     } while (connect(sockfd, (SA *) &servaddr, sizeof(servaddr)) < 0);
+
+    printf("Bound!\n");
 
     return -1;
 }
