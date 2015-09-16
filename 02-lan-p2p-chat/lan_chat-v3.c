@@ -157,6 +157,11 @@ void listener_task(int listen_port)
 
 struct sockaddr_in find_peer(int sockfd, char *subnet_address)
 {
+    struct timeval tv;
+    tv.tv_sec = 3;
+    tv.tv_usec = 0;
+    Setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
     struct sockaddr_in servaddr;
     socklen_t servaddr_len = sizeof(servaddr);
     bzero(&servaddr, servaddr_len);
