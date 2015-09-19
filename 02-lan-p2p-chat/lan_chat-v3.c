@@ -32,7 +32,7 @@ int start_idx;
 int main(int argc, char **argv)
 {
     if (argc < 3)
-        err_quit("usage: lan_chat <subnet-address> <user-name>");
+        err_quit("usage: lan_chat <subnet-address> <user-name> <start-idx>");
 
     char *subnet_address;
     subnet_address = argv[1];
@@ -93,7 +93,7 @@ int connect_to_listener(char *subnet_address)
      * Now, we'll use a different algorithm to find our peers on a LAN.
      *
      * We will iterate over all the hosts in a given subnet, try to connect to
-     * each one on a given port, and if the connection is successful, start 
+     * one on a given port, and if the connection is successful, start 
      * chatting with them.
      */
     found_peer = find_peer(sockfd, subnet_address);
@@ -151,15 +151,18 @@ void listener_task(int listen_port)
     }
 }
 
+/*
+ * When a peer sends `auth: CAN' it asks for communication with another peer.
+ * The other peer must send back `auth: OFC' to accept the connection.
+ */
 void auth_accept(int sockfd, SA *peeraddr, socklen_t peeraddr_len)
 {
     printf("Received AUTH_CAN\n");
 
     char auth_ofc[4 + strlen(AUTH_OFC) + 1];
     create_send_msg_static(AUTH_OFC, auth_ofc);
-    unsigned int auth_ofc_len = strlen(auth_ofc);
 
-    Sendto(sockfd, auth_ofc, auth_ofc_len, 0, peeraddr, peeraddr_len);
+    Sendto(sockfd, auth_ofc, strlen(auth_ofc), 0, peeraddr, peeraddr_len);
 
     printf("Sent %s\n", auth_ofc);
 }
@@ -167,20 +170,20 @@ void auth_accept(int sockfd, SA *peeraddr, socklen_t peeraddr_len)
 char* recv_message(int sockfd, 
                    SA *peeraddr, socklen_t *peeraddr_len)
 {
-    /*
-     * Read the message length, without discarding the message.
-     */
+    /* Read the message length, without discarding the message. */
     char msg_len_hex[4];
     Recvfrom(sockfd, msg_len_hex, sizeof(msg_len_hex), MSG_PEEK,
         peeraddr, peeraddr_len);
     unsigned int msg_len = hex_to_int(msg_len_hex);
 
+    /* Read the whole message */
     char *message = malloc(msg_len);
     Recvfrom(sockfd, message, msg_len, 0, peeraddr, peeraddr_len);
     message[msg_len - 1] = 0;
 
     return message;
 }
+
 
 struct sockaddr_in find_peer(int sockfd, char *subnet_address)
 {
@@ -258,7 +261,8 @@ int bind_listener(int listen_port)
     listenfd = Socket(AF_INET, SOCK_DGRAM, 0);
 
     int opt = 1;
-    Setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
+    Setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,
+        (const char*)&opt, sizeof(opt));
 
     struct sockaddr_in servaddr;
     bzero(&servaddr, sizeof(servaddr));
