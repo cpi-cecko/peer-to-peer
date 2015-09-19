@@ -27,9 +27,11 @@ int spawn_listener(int);
 int connect_to_listener(char*);
 void message_loop(const char*, int);
 
+int start_idx;
+
 int main(int argc, char **argv)
 {
-    if (argc != 3)
+    if (argc < 3)
         err_quit("usage: lan_chat <subnet-address> <user-name>");
 
     char *subnet_address;
@@ -42,6 +44,9 @@ int main(int argc, char **argv)
     if (strlen(user_name) > 10)
         err_quit("The user_name must be at most 10 characters");
 
+    start_idx = 80;
+    if (argc == 4)
+        start_idx = atoi(argv[3]);
     
     /*
      * Spawns a listener process which accepts any connection and outputs each
@@ -172,7 +177,7 @@ struct sockaddr_in find_peer(int sockfd, char *subnet_address)
     char *dot = strrchr(subnet_address, '.');
     dot[1] = 0;
 
-    int i = 180;
+    int i = start_idx;
     char try_address[strlen(subnet_address) + 4];
     int is_conn = 0;
     do {
@@ -188,12 +193,9 @@ struct sockaddr_in find_peer(int sockfd, char *subnet_address)
         printf("Sent %s\n", auth_msg);
 
         char msg[4 + strlen(AUTH_OFC) + 1];
-        if (recvfrom(sockfd, msg, sizeof(msg), 0, (SA *) &servaddr, &servaddr_len) > 0) {
-            printf("Received msg [%s]\n", msg);
-            if (strncmp(&msg[4], AUTH_OFC, strlen(AUTH_OFC)) == 0) {
-                printf("Received AUTH_OFC\n");
-                is_conn = 1;
-            }
+        if (recvfrom(sockfd, msg, sizeof(msg), 0, (SA *) &servaddr, &servaddr_len) > 0 &&
+                strncmp(&msg[4], AUTH_OFC, strlen(AUTH_OFC)) == 0) {
+            is_conn = 1;
         }
     } while (!is_conn);
 
