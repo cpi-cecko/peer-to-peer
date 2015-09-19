@@ -163,7 +163,11 @@ void listener_task(int listen_port)
         message += 4; /* Skip length */
 
         if (strncmp(message, AUTH_CAN, strlen(AUTH_CAN)) == 0) {
+            printf("Received AUTH_CAN\n");
+
             auth_accept(listenfd, (SA *) &peeraddr, peeraddr_len);
+
+            printf("Sent auth accept\n");
         } else {
             printf("%s\n", message);
         }
@@ -180,14 +184,10 @@ void listener_task(int listen_port)
  */
 void auth_accept(int sockfd, SA *peeraddr, socklen_t peeraddr_len)
 {
-    printf("Received AUTH_CAN\n");
-
     char auth_ofc[4 + strlen(AUTH_OFC) + 1];
     create_send_msg_static(AUTH_OFC, auth_ofc);
 
     Sendto(sockfd, auth_ofc, strlen(auth_ofc), 0, peeraddr, peeraddr_len);
-
-    printf("Sent %s\n", auth_ofc);
 }
 
 char* recv_message(int sockfd, 
