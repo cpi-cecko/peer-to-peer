@@ -112,7 +112,8 @@ void message_loop(const char *user_name, int sockfd)
             strncmp(message, END_SIGNAL, strlen(END_SIGNAL)) != 0) {
         char *to_send = create_send_msg(message, user_name);
 
-        Sendto(sockfd, to_send, strlen(to_send), 0, (SA *) &found_peer, sizeof(found_peer));
+        Sendto(sockfd, to_send, strlen(to_send), 0,
+                (SA *) &found_peer, sizeof(found_peer));
 
         free(to_send);
     }
@@ -120,44 +121,65 @@ void message_loop(const char *user_name, int sockfd)
 
 
 int bind_listener(int);
+void auth_accept(int, SA*, socklen_t);
+char* recv_message(int, SA*, socklen_t*);
 
 void listener_task(int listen_port)
 {
-    int listenfd = bind_listener(listen_port);
+    int listenfd;
     struct sockaddr_in peeraddr;
-    socklen_t peeraddr_len = sizeof(peeraddr);
+    socklen_t peeraddr_len;
+
+    listenfd = bind_listener(listen_port);
+    peeraddr_len = sizeof(peeraddr);
 
     while (1) {
-        /*
-         * Read the message length, without discarding the message.
-         */
-        char msg_len_hex[4];
-        while (Recvfrom(listenfd, msg_len_hex, sizeof(msg_len_hex),
-                    MSG_PEEK, (SA *) &peeraddr, &peeraddr_len) > 0) {
-            unsigned int msg_len = hex_to_int(msg_len_hex);
-            char *message = malloc(msg_len);
+        char *message = 
+            recv_message(listenfd, (SA *) &peeraddr, &peeraddr_len);
 
-            Recvfrom(listenfd, message, msg_len, 0, (SA *) &peeraddr, &peeraddr_len);
-            message[msg_len - 1] = 0;
-            message += 4; /* Skip length */
-            if (strncmp(message, AUTH_CAN, strlen(AUTH_CAN)) == 0) {
-                printf("Received AUTH_CAN\n");
+        message += 4; /* Skip length */
 
-                char auth_ofc[4 + strlen(AUTH_OFC) + 1];
-                create_send_msg_static(AUTH_OFC, auth_ofc);
-                Sendto(listenfd, auth_ofc, strlen(auth_ofc), 0, (SA *) &peeraddr, peeraddr_len);
-
-                printf("Sent %s\n", auth_ofc);
-            } else {
-                printf("%s\n", message);
-            }
-
-            /*printf("%s\n", &message[4]);*/
-
-            message -= 4; /* Return message position */
-            free(message);
+        if (strncmp(message, AUTH_CAN, strlen(AUTH_CAN)) == 0) {
+            auth_accept(listenfd, (SA *) &peeraddr, peeraddr_len);
+        } else {
+            printf("%s\n", message);
         }
+
+        message -= 4; /* Unskip length */
+
+        free(message);
     }
+}
+
+void auth_accept(int sockfd, SA *peeraddr, socklen_t peeraddr_len)
+{
+    printf("Received AUTH_CAN\n");
+
+    char auth_ofc[4 + strlen(AUTH_OFC) + 1];
+    create_send_msg_static(AUTH_OFC, auth_ofc);
+    unsigned int auth_ofc_len = strlen(auth_ofc);
+
+    Sendto(sockfd, auth_ofc, auth_ofc_len, 0, peeraddr, peeraddr_len);
+
+    printf("Sent %s\n", auth_ofc);
+}
+
+char* recv_message(int sockfd, 
+                   SA *peeraddr, socklen_t *peeraddr_len)
+{
+    /*
+     * Read the message length, without discarding the message.
+     */
+    char msg_len_hex[4];
+    Recvfrom(sockfd, msg_len_hex, sizeof(msg_len_hex), MSG_PEEK,
+        peeraddr, peeraddr_len);
+    unsigned int msg_len = hex_to_int(msg_len_hex);
+
+    char *message = malloc(msg_len);
+    Recvfrom(sockfd, message, msg_len, 0, peeraddr, peeraddr_len);
+    message[msg_len - 1] = 0;
+
+    return message;
 }
 
 struct sockaddr_in find_peer(int sockfd, char *subnet_address)
