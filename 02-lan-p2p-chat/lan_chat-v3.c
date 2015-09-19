@@ -185,6 +185,10 @@ char* recv_message(int sockfd,
 }
 
 
+void update_try_address(char*, size_t, char*, int, struct sockaddr_in*);
+void auth_request(int, SA*, socklen_t);
+int auth_try_confirm(int, SA*, socklen_t*);
+
 struct sockaddr_in find_peer(int sockfd, char *subnet_address)
 {
     struct timeval tv;
@@ -206,27 +210,48 @@ struct sockaddr_in find_peer(int sockfd, char *subnet_address)
     char try_address[strlen(subnet_address) + 4];
     int is_conn = 0;
     do {
-        snprintf(try_address, sizeof(try_address), "%s%d", subnet_address, i);
+        update_try_address(
+            try_address, sizeof(try_address), subnet_address, i, &servaddr);
         printf("Trying %s\n", try_address);
+
+        auth_request(sockfd, (SA *) &servaddr, servaddr_len);
+        printf("Sent auth request\n");
+
+        is_conn = auth_try_confirm(sockfd, (SA *) &servaddr, &servaddr_len);
+
         ++i;
-
-        Inet_pton(AF_INET, try_address, &servaddr.sin_addr);
-
-        char auth_msg[4 + strlen(AUTH_CAN) + 1];
-        create_send_msg_static(AUTH_CAN, auth_msg);
-        Sendto(sockfd, auth_msg, strlen(auth_msg), 0, (SA *) &servaddr, servaddr_len);
-        printf("Sent %s\n", auth_msg);
-
-        char msg[4 + strlen(AUTH_OFC) + 1];
-        if (recvfrom(sockfd, msg, sizeof(msg), 0, (SA *) &servaddr, &servaddr_len) > 0 &&
-                strncmp(&msg[4], AUTH_OFC, strlen(AUTH_OFC)) == 0) {
-            is_conn = 1;
-        }
     } while (!is_conn);
 
     printf("Bound!\n");
 
     return servaddr;
+}
+
+void update_try_address(char *try_address, size_t try_address_len,
+                        char *subnet_address, int host, 
+                        struct sockaddr_in *servaddr)
+{
+    snprintf(try_address, try_address_len, "%s%d", subnet_address, host);
+
+    Inet_pton(AF_INET, try_address, &servaddr->sin_addr);
+}
+
+void auth_request(int sockfd, SA *servaddr, socklen_t servaddr_len)
+{
+    char auth_msg[4 + strlen(AUTH_CAN) + 1];
+    create_send_msg_static(AUTH_CAN, auth_msg);
+    Sendto(sockfd, auth_msg, strlen(auth_msg), 0, servaddr, servaddr_len);
+}
+
+int auth_try_confirm(int sockfd, SA *servaddr, socklen_t *servaddr_len)
+{
+    char msg[4 + strlen(AUTH_OFC) + 1];
+    if (recvfrom(sockfd, msg, sizeof(msg), 0, servaddr, servaddr_len) > 0 &&
+            strncmp(&msg[4], AUTH_OFC, strlen(AUTH_OFC)) == 0) {
+        return 1;
+    }
+
+    return 0;
 }
 
 void create_send_msg_static(const char *message, char *to_send)
