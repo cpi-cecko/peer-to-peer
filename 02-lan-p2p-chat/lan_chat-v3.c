@@ -9,6 +9,11 @@
 /*
  * TODO:
  * 1. listener_task is protocol-dependent. Remedy this issue.
+ * 2. The peer can easily bind to its own address and port pair. Modify 
+ *    find_peer to avoid this.
+ * 3. Can we use UDP to find our peers and TCP to send our messages to them
+ *    after that? What will be the use of this?
+ * 4. Can we do the opposite?
  */
 #include "../lib/unp.h"
 
