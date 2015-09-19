@@ -102,7 +102,6 @@ int connect_to_listener(char *subnet_address)
 }
 
 
-void create_send_msg_static(const char*, char*);
 char* create_send_msg(char*, const char*);
 
 void message_loop(const char *user_name, int sockfd)
@@ -117,6 +116,31 @@ void message_loop(const char *user_name, int sockfd)
 
         free(to_send);
     }
+}
+
+char* create_send_msg(char *message, const char *user_name)
+{
+    chomp(message);
+
+    int to_send_len = 4 + strlen(user_name) + 
+                      2 + strlen(message) +
+                      1;
+    char hex_len[5];
+    int_to_hex_4(to_send_len, hex_len);
+
+    char *to_send = malloc(to_send_len);
+    snprintf(to_send, to_send_len, "%s%s: %s", hex_len, user_name, message);
+
+    return to_send;
+}
+
+void create_send_msg_static(const char *message, char *to_send)
+{
+    int to_send_len = 4 + strlen(message) + 1;
+    char hex_len[5];
+    int_to_hex_4(to_send_len, hex_len);
+
+    snprintf(to_send, to_send_len, "%s%s", hex_len, message);
 }
 
 
@@ -252,31 +276,6 @@ int auth_try_confirm(int sockfd, SA *servaddr, socklen_t *servaddr_len)
     }
 
     return 0;
-}
-
-void create_send_msg_static(const char *message, char *to_send)
-{
-    int to_send_len = 4 + strlen(message) + 1;
-    char hex_len[5];
-    int_to_hex_4(to_send_len, hex_len);
-
-    snprintf(to_send, to_send_len, "%s%s", hex_len, message);
-}
-
-char* create_send_msg(char *message, const char *user_name)
-{
-    chomp(message);
-
-    int to_send_len = 4 + strlen(user_name) + 
-                      2 + strlen(message) +
-                      1;
-    char hex_len[5];
-    int_to_hex_4(to_send_len, hex_len);
-
-    char *to_send = malloc(to_send_len);
-    snprintf(to_send, to_send_len, "%s%s: %s", hex_len, user_name, message);
-
-    return to_send;
 }
 
 
