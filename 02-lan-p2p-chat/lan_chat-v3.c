@@ -21,13 +21,12 @@
 
 
 struct sockaddr_in found_peer;
+int start_idx;
 
 
 int spawn_listener(int);
 int connect_to_listener(char*);
 void message_loop(const char*, int);
-
-int start_idx;
 
 int main(int argc, char **argv)
 {
@@ -112,7 +111,7 @@ void message_loop(const char *user_name, int sockfd)
         char *to_send = create_send_msg(message, user_name);
 
         Sendto(sockfd, to_send, strlen(to_send), 0,
-                (SA *) &found_peer, sizeof(found_peer));
+            (SA *) &found_peer, sizeof(found_peer));
 
         free(to_send);
     }
@@ -234,8 +233,8 @@ struct sockaddr_in find_peer(int sockfd, char *subnet_address)
     char try_address[strlen(subnet_address) + 4];
     int is_conn = 0;
     do {
-        update_try_address(
-            try_address, sizeof(try_address), subnet_address, i, &servaddr);
+        update_try_address(try_address, sizeof(try_address),
+            subnet_address, i, &servaddr);
         printf("Trying %s\n", try_address);
 
         auth_request(sockfd, (SA *) &servaddr, servaddr_len);
