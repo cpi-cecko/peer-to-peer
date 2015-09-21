@@ -1,7 +1,6 @@
 include ../Make.defines
 
-PROGS = lan_chat-v1 lan_chat-v2 lan_chat-v3
-TESTS = test-is-valid-subnet-address
+PROGS = lan_chat-v1 lan_chat-v2 lan_chat-v3 lan_chat-v4
 
 all:    ${PROGS} ${TESTS}
 
@@ -14,9 +13,9 @@ lan_chat-v2: lan_chat-v2.o
 lan_chat-v3: lan_chat-v3.o
 	${CC} ${CFLAGS} -o $@ lan_chat-v3.o ${LIBS}
 
-test-is-valid-subnet-address: test-is-valid-subnet-address.o
-	${CC} ${CFLAGS} -o $@ test-is-valid-subnet-address.o ${LIBS}
+lan_chat-v4: lan_chat-v4.o
+	${CC} ${CFLAGS} -o $@ lan_chat-v4.o ${LIBS}
 
 
 clean:
-	rm -f ${PROGS} ${TESTS} ${CLEANFILES}
+	rm -f ${PROGS} ${CLEANFILES}
