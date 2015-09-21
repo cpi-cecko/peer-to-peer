@@ -144,7 +144,7 @@ void create_send_msg_static(const char *message, char *to_send)
 
 
 int bind_listener(int);
-void auth_accept(int, SA*, socklen_t);
+void auth_accept(int, const SA*, socklen_t);
 char* recv_message(int, SA*, socklen_t*);
 
 /*
@@ -169,7 +169,7 @@ void listener_task(int listen_port)
         if (strncmp(message, AUTH_CAN, strlen(AUTH_CAN)) == 0) {
             printf("Received AUTH_CAN\n");
 
-            auth_accept(listenfd, (SA *) &peeraddr, peeraddr_len);
+            auth_accept(listenfd, (const SA *) &peeraddr, peeraddr_len);
 
             printf("Sent auth accept\n");
         } else {
@@ -186,7 +186,7 @@ void listener_task(int listen_port)
  * When a peer sends `auth: CAN' it asks for communication with another peer.
  * The other peer must send back `auth: OFC' to accept the connection.
  */
-void auth_accept(int sockfd, SA *peeraddr, socklen_t peeraddr_len)
+void auth_accept(int sockfd, const SA *peeraddr, socklen_t peeraddr_len)
 {
     char auth_ofc[4 + strlen(AUTH_OFC) + 1];
     create_send_msg_static(AUTH_OFC, auth_ofc);
