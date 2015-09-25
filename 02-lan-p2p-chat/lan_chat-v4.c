@@ -31,16 +31,10 @@ static char *user_name;
 static char *bind_addr;
 static char *broadcast_address;
 
-/* static char *iface; */
-
 
 int connect_to_listener();
 void message_loop(int);
 
-/*
- * We're going to use I/O multiplexing here.
- * Handle the problem with stdio and select.
- */
 int main(int argc, char **argv)
 {
     if (argc < 4)
@@ -57,12 +51,7 @@ int main(int argc, char **argv)
     bind_addr = argv[3];
     if (!inet_aton(bind_addr, NULL))
         err_quit("The bind address must be a valid IPv4 address");
-
-    /*
-    if (argc == 5)
-        iface = argv[4];
-        */
-    
+   
     /*
      * Find a group of peers to which we can chat to.
      */
@@ -259,29 +248,10 @@ int bind_listener(int listen_port)
     Setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,
         (const char*)&opt, sizeof(opt));
 
-    /* We bind to interface in order not to receive broadcasted data on the lo
-     * interface.
-     */
-    /*
-    if (iface) {
-        struct ifreq interface;
-        strcpy(interface.ifr_ifrn.ifrn_name, iface);
-        Setsockopt(listenfd, SOL_SOCKET, SO_BINDTODEVICE, 
-            &interface, sizeof(interface));
-    }
-    */
-
     struct sockaddr_in servaddr;
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    /*
-    if (bind_addr) {
-        Inet_pton(AF_INET, bind_addr, &servaddr.sin_addr);
-        printf("gonna bind to [%s]\n", bind_addr);
-    }
-    else
-    */
-        servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(listen_port);
 
     Bind(listenfd, (SA *) &servaddr, sizeof(servaddr));
