@@ -23,6 +23,16 @@ void auth_request(int sockfd, const SA *servaddr, socklen_t servaddr_len)
 int auth_try_confirm(int sockfd, SA *servaddr, socklen_t *servaddr_len)
 {
     char msg[4 + strlen(AUTH_OFC) + 1];
+    Recvfrom(sockfd, msg, sizeof(msg), 0, servaddr, servaddr_len);
+    if (strncmp(&msg[4], AUTH_OFC, strlen(AUTH_OFC)) == 0)
+        return 1;
+
+    return 0;
+}
+
+int auth_try_confirm_race_condition(int sockfd, SA *servaddr, socklen_t *servaddr_len)
+{
+    char msg[4 + strlen(AUTH_OFC) + 1];
     int n = recvfrom(sockfd, msg, sizeof(msg), 0, servaddr, servaddr_len);
     if (n < 0) {
         if (errno == EINTR)
