@@ -4,17 +4,22 @@
  * responded with ``auth: OFC''. It then starts a group chat with them using
  * unicast UDP packets.
  *
- * Usage: lan_chat-v3 <broadcast-address> <user-name>
+ * It uses bind_address to disable self-reception of requests. This only works
+ * for singlehomed hosts, though.
+ *
+ * Usage: lan_chat-v4 <broadcast-address> <user-name> <bind-address>
  */
 
 /*
  * TODO:
  */
 #include "../lib/unp.h"
+#include <net/if.h>
 
 #define CHAT_PORT 11001
 
-#define END_SIGNAL "am-end"
+#define CMD_END "am-end"
+#define CMD_FIND "am-find"
 
 #define AUTH_CAN "auth: CAN"
 #define AUTH_OFC "auth: OFC"
@@ -22,65 +27,64 @@
 #define MAX_PEERS 255
 
 
-int peer_count;
-struct sockaddr_in peers[MAX_PEERS];
+static int peer_count;
+static struct sockaddr_in peers[MAX_PEERS];
 
-int spawn_listener(int);
-int connect_to_listener(const char*);
-void message_loop(const char*, int);
+static char *user_name;
+static char *bind_addr;
+static char *broadcast_address;
 
+/* static char *iface; */
+
+
+int connect_to_listener();
+void message_loop(int);
+
+/*
+ * We're going to use I/O multiplexing here.
+ * Handle the problem with stdio and select.
+ */
 int main(int argc, char **argv)
 {
-    if (argc < 3)
-        err_quit("usage: lan_chat <broadcast-address> <user-name>");
+    if (argc < 4)
+        err_quit("usage: lan_chat <broadcast-address> <user-name> <bind-address>");
 
-    char *broadcast_address;
     broadcast_address = argv[1];
     if (!inet_aton(broadcast_address, NULL))
         err_quit("The broadcast address must be a valid IPv4 address");
 
-    char *user_name;
     user_name = argv[2];
     if (strlen(user_name) > 10)
         err_quit("The user_name must be at most 10 characters");
+
+    bind_addr = argv[3];
+    if (!inet_aton(bind_addr, NULL))
+        err_quit("The bind address must be a valid IPv4 address");
+
+    /*
+    if (argc == 5)
+        iface = argv[4];
+        */
     
     /*
-     * Spawns a listener process which accepts any connection and outputs each
-     * received message on the terminal.
+     * Find a group of peers to which we can chat to.
      */
-    int listenerpid = spawn_listener(CHAT_PORT);
-
+    int sockfd = connect_to_listener();
     /*
-     * Connects to a listener and waits for user input. On each new line input
-     * by user, creates a message according to the protocol and sends it over
-     * the socket.
+     * Open a listening socket and do a `select` on it and on stdin. Handle the
+     * listening socket like `listener_task` used to and handle the input like
+     * before.
      */
-    int sockfd = connect_to_listener(broadcast_address);
-    message_loop(user_name, sockfd);
+    message_loop(sockfd);
 
 
-    kill(listenerpid, SIGKILL);
     exit(0);
 }
 
 
-void listener_task(int);
+void find_peer(int);
 
-int spawn_listener(int listen_port)
-{
-    int listenerpid;
-    if ( (listenerpid = Fork()) == 0 ) {
-        listener_task(listen_port);
-        exit(0);
-    }
-
-    return listenerpid;
-}
-
-
-void find_peer(int, const char*);
-
-int connect_to_listener(const char *broadcast_address)
+int connect_to_listener()
 {
     int sockfd;
     sockfd = Socket(AF_INET, SOCK_DGRAM, 0);
@@ -92,28 +96,106 @@ int connect_to_listener(const char *broadcast_address)
      * one on a given port, and if the connection is successful, start 
      * chatting with them.
      */
-    find_peer(sockfd, broadcast_address);
+    find_peer(sockfd);
 
     return sockfd;
 }
 
 
 char* create_send_msg(char*, const char*);
+int bind_listener(int);
+void auth_request(int, const SA*, socklen_t);
+int auth_try_confirm(int, SA*, socklen_t*);
+void auth_accept(int, const SA*, socklen_t);
+char* recv_message(int, SA*, socklen_t*);
 
-void message_loop(const char *user_name, int sockfd)
+void message_loop(int sockfd)
 {
-    char message[1024];
-    while (fgets(message, sizeof(message), stdin) &&
-            strncmp(message, END_SIGNAL, strlen(END_SIGNAL)) != 0) {
-        char *to_send = create_send_msg(message, user_name);
+    int listenfd;
+    struct sockaddr_in peeraddr;
+    socklen_t peeraddr_len;
 
-        int i;
-        for (i = 0; i < peer_count; ++i) {
-            Sendto(sockfd, to_send, strlen(to_send), 0,
-                (SA *) &peers[i], sizeof(peers[i]));
+    listenfd = bind_listener(CHAT_PORT);
+    peeraddr_len = sizeof(peeraddr);
+
+    fd_set rset;
+    int maxfd = listenfd;
+    FD_ZERO(&rset);
+
+    printf("In message_loop\n");
+
+    for ( ; ; ) {
+        FD_SET(listenfd, &rset);
+        FD_SET(fileno(stdin), &rset);
+        Select(maxfd + 1, &rset, NULL, NULL, NULL);
+
+        if (FD_ISSET(listenfd, &rset)) { /* Received data */
+            printf("Has data\n");
+            char *message = 
+                recv_message(listenfd, (SA *) &peeraddr, &peeraddr_len);
+
+            if (bind_addr && 
+                    strncmp(bind_addr,
+                            Sock_ntop((SA *) &peeraddr, sizeof(peeraddr)),
+                            strlen(bind_addr)) != 0) {
+                printf("Received data\n");
+
+                message += 4; /* Skip length */
+
+                if (strncmp(message, AUTH_CAN, strlen(AUTH_CAN)) == 0) {
+                    printf("Received AUTH_CAN\n");
+
+                    auth_accept(listenfd, (const SA *) &peeraddr, peeraddr_len);
+                    peeraddr.sin_port = htons(CHAT_PORT);
+                    peers[peer_count++] = peeraddr;
+
+                    printf("Sent auth accept\n");
+                } else {
+                    printf("%s\n", message);
+                }
+
+                message -= 4; /* Unskip length */
+            }
+
+            free(message);
         }
 
-        free(to_send);
+        if (FD_ISSET(fileno(stdin), &rset)) { /* Collect input for sending */
+            char message[1024];
+            /* TODO: handle Read errors */
+            if (Read(fileno(stdin), message, sizeof(message))) {
+                if (strncmp(message, CMD_END, strlen(CMD_END)) == 0) {
+                    break;
+                } else if (strncmp(message, CMD_FIND, strlen(CMD_FIND)) == 0) {
+                    struct sockaddr_in reqaddr;
+                    reqaddr.sin_family = AF_INET;
+                    reqaddr.sin_port = htons(CHAT_PORT);
+                    Inet_pton(AF_INET, broadcast_address, &reqaddr.sin_addr);
+
+                    socklen_t reqaddr_len = sizeof(reqaddr);
+
+                    auth_request(sockfd, (SA *) &reqaddr, reqaddr_len);
+                    const int is_confirm =
+                        auth_try_confirm(sockfd, (SA *) &reqaddr, &reqaddr_len);
+                    if (is_confirm > 0) {
+                        peers[peer_count++] = reqaddr;
+                    } else {
+                        err_sys("rcvfrom error");
+                    }
+                } else {
+                    char *to_send = create_send_msg(message, user_name);
+
+                    int i;
+                    for (i = 0; i < peer_count; ++i) {
+                        printf("Sending to %s\n", Sock_ntop((SA *) &peers[i], sizeof(peers[i])));
+                        Sendto(sockfd, to_send, strlen(to_send), 0,
+                                (SA *) &peers[i], sizeof(peers[i]));
+                    }
+
+                    free(to_send);
+                }
+            }
+        }
     }
 }
 
@@ -140,46 +222,6 @@ void create_send_msg_static(const char *message, char *to_send)
     int_to_hex_4(to_send_len, hex_len);
 
     snprintf(to_send, to_send_len, "%s%s", hex_len, message);
-}
-
-
-int bind_listener(int);
-void auth_accept(int, const SA*, socklen_t);
-char* recv_message(int, SA*, socklen_t*);
-
-/*
- * TODO: It's not an orthogonal design: If I modify some part of the code to
- *       send a protocol message, the response must be handled here.
- */
-void listener_task(int listen_port)
-{
-    int listenfd;
-    struct sockaddr_in peeraddr;
-    socklen_t peeraddr_len;
-
-    listenfd = bind_listener(listen_port);
-    peeraddr_len = sizeof(peeraddr);
-
-    while (1) {
-        char *message = 
-            recv_message(listenfd, (SA *) &peeraddr, &peeraddr_len);
-
-        message += 4; /* Skip length */
-
-        if (strncmp(message, AUTH_CAN, strlen(AUTH_CAN)) == 0) {
-            printf("Received AUTH_CAN\n");
-
-            auth_accept(listenfd, (const SA *) &peeraddr, peeraddr_len);
-
-            printf("Sent auth accept\n");
-        } else {
-            printf("%s\n", message);
-        }
-
-        message -= 4; /* Unskip length */
-
-        free(message);
-    }
 }
 
 /*
@@ -212,11 +254,9 @@ char* recv_message(int sockfd,
 }
 
 
-void auth_request(int, const SA*, socklen_t);
-int auth_try_confirm(int, SA*, socklen_t*);
 static void finish_find(int);
 
-void find_peer(int sockfd, const char *broadcast_address)
+void find_peer(int sockfd)
 {
     struct sockaddr_in servaddr;
     socklen_t servaddr_len = sizeof(servaddr);
@@ -243,6 +283,7 @@ void find_peer(int sockfd, const char *broadcast_address)
      */
     auth_request(sockfd, (const SA *) &servaddr, servaddr_len);
 
+    /* TODO: fix the race condition by SIGALRM */
     alarm(5);
     for ( ; ; ) {
         const int is_confirm = 
@@ -303,10 +344,29 @@ int bind_listener(int listen_port)
     Setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,
         (const char*)&opt, sizeof(opt));
 
+    /* We bind to interface in order not to receive broadcasted data on the lo
+     * interface.
+     */
+    /*
+    if (iface) {
+        struct ifreq interface;
+        strcpy(interface.ifr_ifrn.ifrn_name, iface);
+        Setsockopt(listenfd, SOL_SOCKET, SO_BINDTODEVICE, 
+            &interface, sizeof(interface));
+    }
+    */
+
     struct sockaddr_in servaddr;
     bzero(&servaddr, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    /*
+    if (bind_addr) {
+        Inet_pton(AF_INET, bind_addr, &servaddr.sin_addr);
+        printf("gonna bind to [%s]\n", bind_addr);
+    }
+    else
+    */
+        servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(listen_port);
 
     Bind(listenfd, (SA *) &servaddr, sizeof(servaddr));
