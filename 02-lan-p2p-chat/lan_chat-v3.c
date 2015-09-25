@@ -24,24 +24,25 @@
 
 
 struct sockaddr_in found_peer;
-int start_idx;
+
+static char *subnet_address;
+static char *user_name;
+static int start_idx;
 
 
 int spawn_listener(int);
-int connect_to_listener(char*);
-void message_loop(const char*, int);
+int connect_to_listener();
+void message_loop(int);
 
 int main(int argc, char **argv)
 {
     if (argc < 3)
         err_quit("usage: lan_chat <subnet-address> <user-name> <start-idx>");
 
-    char *subnet_address;
     subnet_address = argv[1];
     if (!inet_aton(subnet_address, NULL))
         err_quit("The subnet address must be a valid IPv4 address");
 
-    char *user_name;
     user_name = argv[2];
     if (strlen(user_name) > 10)
         err_quit("The user_name must be at most 10 characters");
@@ -61,8 +62,8 @@ int main(int argc, char **argv)
      * by user, creates a message according to the protocol and sends it over
      * the socket.
      */
-    int sockfd = connect_to_listener(subnet_address);
-    message_loop(user_name, sockfd);
+    int sockfd = connect_to_listener();
+    message_loop(sockfd);
 
 
     kill(listenerpid, SIGKILL);
@@ -84,9 +85,9 @@ int spawn_listener(int listen_port)
 }
 
 
-struct sockaddr_in find_peer(int, char*);
+struct sockaddr_in find_peer(int);
 
-int connect_to_listener(char *subnet_address)
+int connect_to_listener()
 {
     int sockfd;
     sockfd = Socket(AF_INET, SOCK_DGRAM, 0);
@@ -98,13 +99,13 @@ int connect_to_listener(char *subnet_address)
      * one on a given port, and if the connection is successful, start 
      * chatting with them.
      */
-    found_peer = find_peer(sockfd, subnet_address);
+    found_peer = find_peer(sockfd);
 
     return sockfd;
 }
 
 
-void message_loop(const char *user_name, int sockfd)
+void message_loop(int sockfd)
 {
     char message[1024];
     while (fgets(message, sizeof(message), stdin) &&
@@ -156,9 +157,9 @@ void listener_task(int listen_port)
 }
 
 
-void update_try_address(char*, size_t, char*, int, struct sockaddr_in*);
+static void update_try_address(char*, size_t, char*, int, struct sockaddr_in*);
 
-struct sockaddr_in find_peer(int sockfd, char *subnet_address)
+struct sockaddr_in find_peer(int sockfd)
 {
     struct timeval tv;
     tv.tv_sec = 1;
@@ -196,9 +197,9 @@ struct sockaddr_in find_peer(int sockfd, char *subnet_address)
     return servaddr;
 }
 
-void update_try_address(char *try_address, size_t try_address_len,
-                        char *subnet_address, int host, 
-                        struct sockaddr_in *servaddr)
+static void update_try_address(char *try_address, size_t try_address_len,
+                               char *subnet_address, int host, 
+                               struct sockaddr_in *servaddr)
 {
     snprintf(try_address, try_address_len, "%s%d", subnet_address, host);
 
