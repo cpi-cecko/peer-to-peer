@@ -3,7 +3,7 @@
  * The subnet address is passed as an argument. The peer-finding algorithm is
  * the same as in lan_chat-v2, except that now we're using UDP.
  *
- * Usage: lan_chat-v3 <subnet-address> <user-name>
+ * Usage: lan_chat-v3 <subnet-address> <user-name> <start-idx>
  */
 
 /*

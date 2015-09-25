@@ -3,7 +3,7 @@
  * The subnet address is passed as an argument. We iterate over the
  * possible IPs in the subnet /24 and try to connect to each one.
  *
- * Usage: lan_chat-v2 <subnet-address> <user-name>
+ * Usage: lan_chat-v2 <subnet-address> <user-name> <start-idx>
  */
 
 /*
@@ -23,6 +23,7 @@
 
 static char *subnet_address;
 static char *user_name;
+static int start_idx;
 
 
 int spawn_listener(int);
@@ -31,8 +32,8 @@ void message_loop(int);
 
 int main(int argc, char **argv)
 {
-    if (argc != 3)
-        err_quit("usage: lan_chat <subnet-address> <user-name>");
+    if (argc < 3)
+        err_quit("usage: lan_chat <subnet-address> <user-name> <start-idx>");
 
     subnet_address = argv[1];
     if (!inet_aton(subnet_address, NULL))
@@ -42,6 +43,8 @@ int main(int argc, char **argv)
     if (strlen(user_name) > 10)
         err_quit("The user_name must be at most 10 characters");
 
+    if (argc == 4)
+        start_idx = atoi(argv[3]);
     
     /*
      * Spawns a listener process which accepts any connection and outputs each
@@ -149,7 +152,7 @@ int find_peer(int sockfd)
     char *dot = strrchr(subnet_address, '.');
     dot[1] = 0;
 
-    int i = 180;
+    int i = start_idx;
     char try_address[strlen(subnet_address) + 4];
     do {
         snprintf(try_address, sizeof(try_address), "%s%d", subnet_address, i);
