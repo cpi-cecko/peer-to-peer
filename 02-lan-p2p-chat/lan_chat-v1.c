@@ -6,7 +6,12 @@
  *
  * Usage: lan_chat-v1 <listen-port> <user-id>
  */
+
+/*
+ * TODO:
+ */
 #include "../lib/unp.h"
+#include "../lib/p2p.h"
 
 #define PORT_MIN 11000
 #define PORT_MAX 11010
@@ -99,8 +104,6 @@ int connect_to_listener(int listen_port)
 }
 
 
-char* create_send_msg(char*, char*);
-
 void message_loop(char *user_name, int sockfd)
 {
     char message[1024];
@@ -162,22 +165,6 @@ int find_peer(int sockfd, int listen_port)
 
     --current_port;
     return current_port;
-}
-
-char* create_send_msg(char *message, char *user_name)
-{
-    chomp(message);
-
-    int to_send_len = 4 + strlen(user_name) + 
-                      2 + strlen(message) +
-                      1;
-    char hex_len[5];
-    int_to_hex_4(to_send_len, hex_len);
-
-    char *to_send = malloc(to_send_len);
-    snprintf(to_send, to_send_len, "%s%s: %s", hex_len, user_name, message);
-
-    return to_send;
 }
 
 

@@ -16,13 +16,11 @@
  * 4. Can we do the opposite?
  */
 #include "../lib/unp.h"
+#include "../lib/p2p.h"
 
 #define CHAT_PORT 11001
 
 #define END_SIGNAL "am-end"
-
-#define AUTH_CAN "auth: CAN"
-#define AUTH_OFC "auth: OFC"
 
 
 struct sockaddr_in found_peer;
@@ -106,8 +104,6 @@ int connect_to_listener(char *subnet_address)
 }
 
 
-char* create_send_msg(char*, const char*);
-
 void message_loop(const char *user_name, int sockfd)
 {
     char message[1024];
@@ -122,36 +118,12 @@ void message_loop(const char *user_name, int sockfd)
     }
 }
 
-char* create_send_msg(char *message, const char *user_name)
-{
-    chomp(message);
-
-    int to_send_len = 4 + strlen(user_name) + 
-                      2 + strlen(message) +
-                      1;
-    char hex_len[5];
-    int_to_hex_4(to_send_len, hex_len);
-
-    char *to_send = malloc(to_send_len);
-    snprintf(to_send, to_send_len, "%s%s: %s", hex_len, user_name, message);
-
-    return to_send;
-}
-
-void create_send_msg_static(const char *message, char *to_send)
-{
-    int to_send_len = 4 + strlen(message) + 1;
-    char hex_len[5];
-    int_to_hex_4(to_send_len, hex_len);
-
-    snprintf(to_send, to_send_len, "%s%s", hex_len, message);
-}
-
-
 int bind_listener(int);
-void auth_accept(int, SA*, socklen_t);
-char* recv_message(int, SA*, socklen_t*);
 
+/*
+ * TODO: It's not an orthogonal design: If I modify some part of the code to
+ *       send a protocol message, the response must be handled here.
+ */
 void listener_task(int listen_port)
 {
     int listenfd;
@@ -183,39 +155,8 @@ void listener_task(int listen_port)
     }
 }
 
-/*
- * When a peer sends `auth: CAN' it asks for communication with another peer.
- * The other peer must send back `auth: OFC' to accept the connection.
- */
-void auth_accept(int sockfd, SA *peeraddr, socklen_t peeraddr_len)
-{
-    char auth_ofc[4 + strlen(AUTH_OFC) + 1];
-    create_send_msg_static(AUTH_OFC, auth_ofc);
-
-    Sendto(sockfd, auth_ofc, strlen(auth_ofc), 0, peeraddr, peeraddr_len);
-}
-
-char* recv_message(int sockfd, 
-                   SA *peeraddr, socklen_t *peeraddr_len)
-{
-    /* Read the message length, without discarding the message. */
-    char msg_len_hex[4];
-    Recvfrom(sockfd, msg_len_hex, sizeof(msg_len_hex), MSG_PEEK,
-        peeraddr, peeraddr_len);
-    unsigned int msg_len = hex_to_int(msg_len_hex);
-
-    /* Read the whole message */
-    char *message = malloc(msg_len);
-    Recvfrom(sockfd, message, msg_len, 0, peeraddr, peeraddr_len);
-    message[msg_len - 1] = 0;
-
-    return message;
-}
-
 
 void update_try_address(char*, size_t, char*, int, struct sockaddr_in*);
-void auth_request(int, SA*, socklen_t);
-int auth_try_confirm(int, SA*, socklen_t*);
 
 struct sockaddr_in find_peer(int sockfd, char *subnet_address)
 {
@@ -262,24 +203,6 @@ void update_try_address(char *try_address, size_t try_address_len,
     snprintf(try_address, try_address_len, "%s%d", subnet_address, host);
 
     Inet_pton(AF_INET, try_address, &servaddr->sin_addr);
-}
-
-void auth_request(int sockfd, SA *servaddr, socklen_t servaddr_len)
-{
-    char auth_msg[4 + strlen(AUTH_CAN) + 1];
-    create_send_msg_static(AUTH_CAN, auth_msg);
-    Sendto(sockfd, auth_msg, strlen(auth_msg), 0, servaddr, servaddr_len);
-}
-
-int auth_try_confirm(int sockfd, SA *servaddr, socklen_t *servaddr_len)
-{
-    char msg[4 + strlen(AUTH_OFC) + 1];
-    if (recvfrom(sockfd, msg, sizeof(msg), 0, servaddr, servaddr_len) > 0 &&
-            strncmp(&msg[4], AUTH_OFC, strlen(AUTH_OFC)) == 0) {
-        return 1;
-    }
-
-    return 0;
 }
 
 

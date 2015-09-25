@@ -14,6 +14,7 @@
  *  solution of this problem.
  */
 #include "../lib/unp.h"
+#include "../lib/p2p.h"
 
 #define CHAT_PORT 11000
 
@@ -94,8 +95,6 @@ int connect_to_listener(char *subnet_address)
 }
 
 
-char* create_send_msg(char*, const char*);
-
 void message_loop(const char *user_name, int sockfd)
 {
     char message[1024];
@@ -161,22 +160,6 @@ int find_peer(int sockfd, char *subnet_address)
     printf("Bound!\n");
 
     return -1;
-}
-
-char* create_send_msg(char *message, const char *user_name)
-{
-    chomp(message);
-
-    int to_send_len = 4 + strlen(user_name) + 
-                      2 + strlen(message) +
-                      1;
-    char hex_len[5];
-    int_to_hex_4(to_send_len, hex_len);
-
-    char *to_send = malloc(to_send_len);
-    snprintf(to_send, to_send_len, "%s%s: %s", hex_len, user_name, message);
-
-    return to_send;
 }
 
 
