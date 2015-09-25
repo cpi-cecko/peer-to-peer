@@ -222,7 +222,7 @@ void find_peer(int sockfd)
             /* EINTR received */
             break;
         } else {
-            err_sys("rcvfrom error");
+            err_sys("auth_try_confirm error");
         }
     }
 
