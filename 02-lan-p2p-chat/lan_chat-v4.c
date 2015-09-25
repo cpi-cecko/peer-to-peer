@@ -103,8 +103,6 @@ void message_loop(int sockfd)
     int maxfd = listenfd;
     FD_ZERO(&rset);
 
-    printf("In message_loop\n");
-
     for ( ; ; ) {
         FD_SET(listenfd, &rset);
         FD_SET(fileno(stdin), &rset);
@@ -195,8 +193,10 @@ void find_peer(int sockfd)
     const int on = 1;
     Setsockopt(sockfd, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on));
 
-    sigset_t sigset_alrm;
+    sigset_t sigset_alrm, sigset_empty;
+    fd_set rset;
     Sigemptyset(&sigset_alrm);
+    Sigemptyset(&sigset_empty);
     Sigaddset(&sigset_alrm, SIGALRM);
 
     Signal(SIGALRM, finish_find);
@@ -210,20 +210,35 @@ void find_peer(int sockfd)
      */
     auth_request(sockfd, (const SA *) &servaddr, servaddr_len);
 
-    /* TODO: fix the race condition by SIGALRM */
+    /* 
+     * Race condition scenario:
+     * 1. Start a peer; wait until it says that there are no peers.
+     * 2. Start another peer
+     * 3. The first peer should say that it has received AUTH_CAN
+     * 4. The second peer should not be able to do a thing
+     *
+     * Fixed with pselect
+     */
+    Sigprocmask(SIG_BLOCK, &sigset_alrm, NULL);
     alarm(5);
     for ( ; ; ) {
+        FD_SET(sockfd, &rset);
+        int n = pselect(sockfd + 1, &rset, NULL, NULL, NULL, &sigset_empty);
+        if (n < 0) {
+            if (errno == EINTR)
+                break;
+            else
+                err_sys("pselect error");
+        } else if (n != 1)
+            err_sys("pselect error: returned %d\n", n);
+
         const int is_confirm = 
             auth_try_confirm(sockfd, (SA *) &peeraddr, &peeraddr_len);
         if (is_confirm > 0) {
             /* Add the address to the array of peers */
             peers[peer_count++] = peeraddr;
-        } else if (is_confirm == -1) {
-            /* EINTR received */
-            break;
-        } else {
-            err_sys("rcvfrom error");
-        }
+        } else
+            err_sys("auth_try_confirm error");
     }
 
     if (peer_count > 0) {
