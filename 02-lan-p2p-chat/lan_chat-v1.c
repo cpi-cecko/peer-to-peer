@@ -165,6 +165,8 @@ int find_peer(int sockfd)
         current_port++;
     } while (connect(sockfd, (SA *) &servaddr, sizeof(servaddr)) < 0);
 
+    printf("Bound!\n");
+
     --current_port;
     return current_port;
 }
