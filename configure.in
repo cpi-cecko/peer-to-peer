@@ -567,6 +567,12 @@ LIB_OBJS="$LIB_OBJS writen.o"
 LIB_OBJS="$LIB_OBJS writable_timeo.o"
 
 dnl ##################################################################
+dnl Build the list of object files to build from the source files related to
+dnl the p2p.h header in the lib/ directory.
+dnl
+LIBP2P_OBJS="str_utils.o"
+
+dnl ##################################################################
 dnl Build the list of object files to build from the source files in
 dnl the libfree/ directory.
 dnl
