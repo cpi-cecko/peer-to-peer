@@ -24,6 +24,7 @@
 #define MAX_PEERS 255
 
 
+/* TODO: Pass by ref and make them local */
 static int peer_count;
 static struct sockaddr_in peers[MAX_PEERS];
 
@@ -90,6 +91,7 @@ int connect_to_listener()
 
 int bind_listener(int);
 
+/* TODO: Too large; break into subfunctions */
 void message_loop(int sockfd)
 {
     int listenfd;
