@@ -272,7 +272,7 @@ PACKAGE_STRING=
 PACKAGE_BUGREPORT=
 
 ac_unique_file="lib/unp.h"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT RANLIB ac_ct_RANLIB CPP EGREP LIB_OBJS LIBFREE_OBJS LIBGAI_OBJS LIBROUTE_OBJS LIBXTI_OBJS LIBS_XTI LIBUNP LIBUNPXTI LIBUNP_NAME LIBUNPXTI_NAME LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT RANLIB ac_ct_RANLIB CPP EGREP LIB_OBJS LIBP2P_OBJS LIBFREE_OBJS LIBGAI_OBJS LIBROUTE_OBJS LIBXTI_OBJS LIBS_XTI LIBUNP LIBUNPXTI LIBUNP_NAME LIBUNPXTI_NAME LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -7851,6 +7851,9 @@ fi
 
 LIBFREE_OBJS="$LIBFREE_OBJS inet_ntop.o inet_pton.o"
 
+LIBP2P_OBJS=
+LIBP2P_OBJS="$LIBP2P_OBJS str_utils.o"
+
 if test "$ac_cv_func_getaddrinfo" = no ; then
 LIBGAI_OBJS="getaddrinfo.o getnameinfo.o freeaddrinfo.o gai_strerror.o"
 LIBGAI_OBJS="$LIBGAI_OBJS ga_aistruct.o ga_clone.o ga_echeck.o ga_nsearch.o"
@@ -8555,6 +8558,7 @@ s,@ac_ct_RANLIB@,$ac_ct_RANLIB,;t t
 s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@LIB_OBJS@,$LIB_OBJS,;t t
+s,@LIBP2P_OBJS@,$LIBP2P_OBJS,;t t
 s,@LIBFREE_OBJS@,$LIBFREE_OBJS,;t t
 s,@LIBGAI_OBJS@,$LIBGAI_OBJS,;t t
 s,@LIBROUTE_OBJS@,$LIBROUTE_OBJS,;t t
