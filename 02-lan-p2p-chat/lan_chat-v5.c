@@ -11,7 +11,7 @@
  * Funny idea: use multicast addresses for group determination. This way we use
  * the Network layer to handle this for us. 
  *
- * Usage: lan_chat-v4 <multicast-address> <user-name> <bind-address>
+ * Usage: lan_chat-v5 <multicast-address> <user-name> <bind-address>
  */
 
 /*
