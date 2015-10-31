@@ -1,6 +1,6 @@
 include ../Make.defines
 
-PROGS = lan_chat-v1 lan_chat-v2 lan_chat-v3 lan_chat-v4
+PROGS = lan_chat-v1 lan_chat-v2 lan_chat-v3 lan_chat-v4 lan_chat-v5
 
 all:    ${PROGS}
 
